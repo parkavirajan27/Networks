@@ -1,0 +1,36 @@
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+
+void calculate_the_maximum(int n, int k) {
+    int maxAnd = 0;
+    int maxOr = 0;
+    int maxXor = 0;
+    for (int i = 1; i <= n; i++) {
+        for (int j = i + 1; j <= n; j++) {
+            int currentAnd = i & j;
+            if (currentAnd > maxAnd && currentAnd < k) {
+                maxAnd = currentAnd;
+            }
+            int currentOr = i | j;
+            if (currentOr > maxOr && currentOr < k) {
+                maxOr = currentOr;
+            }
+            int currentXor = i ^ j;
+            if (currentXor > maxXor && currentXor < k) {
+                maxXor = currentXor;
+            }
+        }
+    }
+    printf("%d\n%d\n%d\n", maxAnd, maxOr, maxXor);
+}
+
+int main() {
+    int n, k;
+    if (scanf("%d %d", &n, &k) == 2) {
+        calculate_the_maximum(n, k);
+    }
+    
+    return 0;
+}
