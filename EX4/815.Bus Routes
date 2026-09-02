@@ -1,0 +1,90 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+struct Node {
+    int routeId;
+    struct Node* next;
+};
+struct QueueNode {
+    int routeId;
+    int busesTaken;
+};
+int numBusesToDestination(int** routes, int routesSize, int* routesColSize, int source, int target) {
+    if (source == target) return 0;
+    int maxStop = 0;
+    for (int i = 0; i < routesSize; i++) {
+        for (int j = 0; j < routesColSize[i]; j++) {
+            if (routes[i][j] > maxStop) {
+                maxStop = routes[i][j];
+            }
+        }
+    }
+    if (source > maxStop || target > maxStop) return -1;
+    struct Node** stopToRoutes = (struct Node**)calloc(maxStop + 1, sizeof(struct Node*));
+    
+    for (int i = 0; i < routesSize; i++) {
+        for (int j = 0; j < routesColSize[i]; j++) {
+            int stop = routes[i][j];
+            struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+            newNode->routeId = i;
+            newNode->next = stopToRoutes[stop];
+            stopToRoutes[stop] = newNode;
+        }
+    }
+    struct QueueNode* queue = (struct QueueNode*)malloc(routesSize * sizeof(struct QueueNode));
+    bool* visitedRoutes = (bool*)calloc(routesSize, sizeof(bool));
+    int head = 0, tail = 0;
+    struct Node* temp = stopToRoutes[source];
+    while (temp != NULL) {
+        int rId = temp->routeId;
+        if (!visitedRoutes[rId]) {
+            visitedRoutes[rId] = true;
+            queue[tail++] = (struct QueueNode){rId, 1};
+        }
+        temp = temp->next;
+    }
+    while (head < tail) {
+        struct QueueNode curr = queue[head++];
+        int currRouteId = curr.routeId;
+        int busesTaken = curr.busesTaken;
+        for (int j = 0; j < routesColSize[currRouteId]; j++) {
+            int stop = routes[currRouteId][j];
+            if (stop == target) {
+                for (int i = 0; i <= maxStop; i++) {
+                    struct Node* currNode = stopToRoutes[i];
+                    while (currNode != NULL) {
+                        struct Node* toFree = currNode;
+                        currNode = currNode->next;
+                        free(toFree);
+                    }
+                }
+                free(stopToRoutes);
+                free(queue);
+                free(visitedRoutes);
+                return busesTaken;
+            }
+            struct Node* neighborRouteNode = stopToRoutes[stop];
+            while (neighborRouteNode != NULL) {
+                int nextRouteId = neighborRouteNode->routeId;
+                if (!visitedRoutes[nextRouteId]) {
+                    visitedRoutes[nextRouteId] = true;
+                    queue[tail++] = (struct QueueNode){nextRouteId, busesTaken + 1};
+                }
+                neighborRouteNode = neighborRouteNode->next;
+            }
+        }
+    }
+    for (int i = 0; i <= maxStop; i++) {
+        struct Node* currNode = stopToRoutes[i];
+        while (currNode != NULL) {
+            struct Node* toFree = currNode;
+            currNode = currNode->next;
+            free(toFree);
+        }
+    }
+    free(stopToRoutes);
+    free(queue);
+    free(visitedRoutes);
+
+    return -1;
+}
