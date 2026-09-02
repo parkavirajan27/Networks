@@ -1,0 +1,64 @@
+int minimumEffortPath(int** heights, int heightsSize, int* heightsColSize) {
+    int rows = heightsSize;
+    int cols = heightsColSize[0];
+    typedef struct { int r, c, effort; } Node;
+    int maxNodes = rows * cols;
+    int** effortMatrix = (int**)malloc(rows * sizeof(int*));
+    bool** visited = (bool**)malloc(rows * sizeof(bool*));
+    Node* minHeap = (Node*)malloc(maxNodes * 4 * sizeof(Node));
+    for (int i = 0; i < rows; i++) {
+        effortMatrix[i] = (int*)malloc(cols * sizeof(int));
+        visited[i] = (bool*)malloc(cols * sizeof(bool));
+        for (int j = 0; j < cols; j++) {
+            effortMatrix[i][j] = 1e9;
+            visited[i][j] = false;
+        }
+    }
+    int heapSize = 0;
+    effortMatrix[0][0] = 0;
+    minHeap[heapSize++] = (Node){0, 0, 0};
+    int dr[] = {-1, 1, 0, 0};
+    int dc[] = {0, 0, -1, 1};
+    while (heapSize > 0) {
+        Node curr = minHeap[0];
+        heapSize--;
+        if (heapSize > 0) {
+            minHeap[0] = minHeap[heapSize];
+            int idx = 0;
+            while (2 * idx + 1 < heapSize) {
+                int left = 2 * idx + 1, right = 2 * idx + 2, smallest = left;
+                if (right < heapSize && minHeap[right].effort < minHeap[left].effort) smallest = right;
+                if (minHeap[idx].effort <= minHeap[smallest].effort) break;
+                Node temp = minHeap[idx]; minHeap[idx] = minHeap[smallest]; minHeap[smallest] = temp;
+                idx = smallest;
+            }
+        }
+        int r = curr.r, c = curr.c, currentEffort = curr.effort;
+        if (r == rows - 1 && c == cols - 1) {
+            for (int i = 0; i < rows; i++) { free(effortMatrix[i]); free(visited[i]); }
+            free(effortMatrix); free(visited); free(minHeap);
+            return currentEffort;
+        }
+        if (visited[r][c]) continue;
+        visited[r][c] = true;
+        for (int i = 0; i < 4; i++) {
+            int nr = r + dr[i], nc = c + dc[i];
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !visited[nr][nc]) {
+                int diff = abs(heights[r][c] - heights[nr][nc]);
+                int maxEffort = currentEffort > diff ? currentEffort : diff;
+                if (maxEffort < effortMatrix[nr][nc]) {
+                    effortMatrix[nr][nc] = maxEffort;
+                    minHeap[heapSize] = (Node){nr, nc, maxEffort};
+                    int idx = heapSize++;
+                    while (idx > 0 && minHeap[idx].effort < minHeap[(idx - 1) / 2].effort) {
+                        Node temp = minHeap[idx]; minHeap[idx] = minHeap[(idx - 1) / 2]; minHeap[(idx - 1) / 2] = temp;
+                        idx = (idx - 1) / 2;
+                    }
+                }
+            }
+        }
+    }
+    for (int i = 0; i < rows; i++) { free(effortMatrix[i]); free(visited[i]); }
+    free(effortMatrix); free(visited); free(minHeap);
+    return 0;
+}
